@@ -1,0 +1,23 @@
+[project]
+name = "python-llm-template"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "litellm>=1.68.0",
+    "pre-commit>=4.2.0",
+    "pyright>=1.1.400",
+    "ruff>=0.11.8",
+]
+
+[tool.ruff]
+line-length = 120
+
+lint.select = ["E", "F", "I", "W", "B006", "PTH", "ANN"]
+lint.ignore = ["E203", "W293", "E501"]
+
+[tool.pyright]
+reportGeneralTypeIssues = true
+reportOptionalMemberAccess = true
+reportMissingModuleSource = false
