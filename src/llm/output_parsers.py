@@ -1,2 +1,2 @@
-def parse_text(text: str) -> str:
+def parse_text(text: str, query_source: str, model: str) -> str:
     return text

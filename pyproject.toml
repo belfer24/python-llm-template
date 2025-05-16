@@ -18,9 +18,6 @@ line-length = 120
 lint.select = ["E", "F", "I", "W", "B006", "PTH", "ANN"]
 lint.ignore = ["E203", "W293", "E501", "ANN204"]
 
-[tool.ruff.lint.flake8-annotations]
-mypy-init-return = false
-
 [tool.pyright]
 reportGeneralTypeIssues = true
 reportOptionalMemberAccess = true
