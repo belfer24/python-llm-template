@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import time
 import uuid
 from typing import Any
@@ -18,7 +19,11 @@ class LLMTracer:
         metadata: dict[str, Any] | None = None,
         parent: LLMTracer | None = None,
     ) -> None:
-        self.langfuse = Langfuse(host="https://us.cloud.langfuse.com", public_key="", secret_key="")
+        self.langfuse = Langfuse(
+            host="https://us.cloud.langfuse.com",
+            public_key=os.getenv("LANGFUSE_PUBLIC_KEY"),
+            secret_key=os.getenv("LANGFUSE_SECRET_KEY"),
+        )
         self.run_id = str(uuid.uuid4())
         self.run_name = run_name
         self.tracer_input = tracer_input
