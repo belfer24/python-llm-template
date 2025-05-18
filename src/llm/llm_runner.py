@@ -8,7 +8,7 @@ from litellm.types import utils as litellm_types
 from src.llm import exception as llm_exception
 from src.llm import models as llm_models
 from src.llm.llm_tracer import LLMTracer
-from src.llm.prompt_messages import Message
+from src.llm.prompt_messages import Message, MessageTemplate
 
 T = TypeVar("T")
 
@@ -17,7 +17,7 @@ class LLMRunner[T]:
     def __init__(
         self,
         output_parser: Callable[[str, str, str], T],
-        prompt: list[Message],
+        prompt_template: list[MessageTemplate],
         prompt_private_input_variables: Optional[list[str]] = None,
         model: str = llm_models.OPENAI.GPT_4O_2024_08_06,
         max_tokens: int = 4096,
@@ -27,16 +27,16 @@ class LLMRunner[T]:
         self._logger = logging.getLogger(__name__)
         self.output_parser = output_parser
         self.prompt_private_input_variables = prompt_private_input_variables if prompt_private_input_variables else []
-        self.prompt_template = prompt
+        self.prompt_template = prompt_template
         self.model = model
         self.max_tokens = max_tokens
         self.cache_control_index = cache_control_index
 
     def get_concrete_prompt(self, prompt_input: dict[str, str]) -> list[Message]:
-        concrete_prompt = []
+        concrete_prompt: list[Message] = []
         for template_message in self.prompt_template:
-            concrete_message = template_message.copy()
-            concrete_message["content"] = template_message["content"].format(**prompt_input)
+            concrete_message: Message = template_message.copy()  # type: ignore
+            concrete_message["content"] = template_message["content"].render(**prompt_input)
             concrete_prompt.append(concrete_message)
         return concrete_prompt
 
