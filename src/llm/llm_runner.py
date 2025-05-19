@@ -16,7 +16,7 @@ T = TypeVar("T")
 class LLMRunner[T]:
     def __init__(
         self,
-        output_parser: Callable[[str, str, str], T],
+        parse_output: Callable[[str, str, str], T],
         prompt_template: list[MessageTemplate],
         prompt_private_input_variables: Optional[list[str]] = None,
         model: str = llm_models.OPENAI.GPT_4O_2024_08_06,
@@ -25,7 +25,7 @@ class LLMRunner[T]:
         cache_control_index: int | None = None,
     ):
         self._logger = logging.getLogger(__name__)
-        self.output_parser = output_parser
+        self.parse_output = parse_output
         self.prompt_private_input_variables = prompt_private_input_variables if prompt_private_input_variables else []
         self.prompt_template = prompt_template
         self.model = model
@@ -79,7 +79,7 @@ class LLMRunner[T]:
             response = self._call_llm(prompt_input, use_prompt_caching)
             raw_llm_output = cast(str, response.choices[0].message.content)  # type: ignore
             tracer.end_llm_call(raw_llm_output, response.usage)  # type: ignore
-            parsed_output = self.output_parser.parse(raw_llm_output)
+            parsed_output = self.parse_output(raw_llm_output, query_source, self.model)
             tracer.end_run(raw_llm_output, error=None)
             return parsed_output
 
