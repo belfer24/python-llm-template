@@ -69,13 +69,14 @@ class LLMRunner[T]:
     ) -> T:
         try:
             censored_input = censor_func(prompt_input, self.prompt_private_input_variables)
+            censored_concrete_prompt = self.get_concrete_prompt(censored_input)
             tracer = LLMTracer(
                 run_name=self.__class__.__name__,
                 tracer_input=censored_input,
                 metadata={"query_source": query_source},
                 parent=parent_tracer,
             )
-            tracer.init_llm_call(censored_input, self.prompt_template, self.model)
+            tracer.init_llm_call(censored_concrete_prompt, self.model)
             response = self._call_llm(prompt_input, use_prompt_caching)
             raw_llm_output = cast(str, response.choices[0].message.content)  # type: ignore
             tracer.end_llm_call(raw_llm_output, response.usage)  # type: ignore

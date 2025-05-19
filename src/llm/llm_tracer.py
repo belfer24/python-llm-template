@@ -8,7 +8,7 @@ from typing import Any
 from langfuse import Langfuse
 from litellm.types.utils import Usage as LiteLLmUsage
 
-from src.llm.prompt_messages import MessageTemplate
+from src.llm.prompt_messages import Message, MessageTemplate
 
 
 class LLMTracer:
@@ -37,21 +37,24 @@ class LLMTracer:
                 metadata=self.metadata,
                 input=self.tracer_input,
             )
+            self.span = self.trace.span(
+                name=run_name,
+                input=self.tracer_input,
+                metadata=self.metadata,
+            )
         else:
             self.trace = parent.trace
+            self.span = parent.span.span(
+                name=run_name,
+                input=self.tracer_input,
+                metadata=self.metadata,
+            )
 
-        self.span = self.trace.span(
-            name=run_name,
-            input=self.tracer_input,
-            metadata=self.metadata,
-        )
-
-    def init_llm_call(self, prompt_input: dict[str, str], prompt_template: list[MessageTemplate], model: str) -> None:
+    def init_llm_call(self, llm_input: list[Message], model: str) -> None:
         self.llm_generation = self.span.generation(
             name=f"{self.run_name}_generation",
             model=model,
-            prompt_template=str(prompt_template),
-            prompt_input=prompt_input,
+            input=llm_input,
         )
 
     def end_llm_call(self, output: str, llm_usage_information: LiteLLmUsage) -> None:
