@@ -1,14 +1,18 @@
 from __future__ import annotations
 
+import json
 import os
 import time
 import uuid
+from dataclasses import asdict
+from datetime import datetime
 from typing import Any
 
 from langfuse import Langfuse
 from litellm.types.utils import Usage as LiteLLmUsage
 
-from src.llm.prompt_messages import Message, MessageTemplate
+from src.llm.prompt_messages import Message
+from src.llm.tool_helpers import ToolCall, ToolResult
 
 
 class LLMTracer:
@@ -52,9 +56,7 @@ class LLMTracer:
 
     def init_llm_call(self, llm_input: list[Message], model: str) -> None:
         self.llm_generation = self.span.generation(
-            name=f"{self.run_name}_generation",
-            model=model,
-            input=llm_input,
+            name=f"{self.run_name}_generation", model=model, input=llm_input, start_time=datetime.now()
         )
 
     def end_llm_call(self, output: str, llm_usage_information: LiteLLmUsage) -> None:
@@ -65,8 +67,15 @@ class LLMTracer:
                     "input": llm_usage_information.prompt_tokens,
                     "output": llm_usage_information.completion_tokens,
                 },
-                finish_time=time.time(),
+                end_time=datetime.now(),
             )
+
+    def init_tool_use(self, tool_call: ToolCall) -> None:
+        self.tool_use = self.span.span(name=tool_call.name, input=tool_call.arguments, start_time=datetime.now())
+
+    def end_tool_use(self, tool_result: ToolResult) -> None:
+        if self.tool_use:
+            self.tool_use.end(output=json.dumps(asdict(tool_result), indent=2), end_time=datetime.now())
 
     def end_run(self, output: str | dict, error: str | None = None) -> None:
         if self.span:
@@ -75,11 +84,11 @@ class LLMTracer:
                     output=output,
                     status="error",
                     status_message=error,
-                    finish_time=time.time(),
+                    end_time=datetime.now(),
                 )
             else:
                 self.span.end(
                     output=output,
                     status="success",
-                    finish_time=time.time(),
+                    end_time=datetime.now(),
                 )

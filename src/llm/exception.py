@@ -47,3 +47,13 @@ class LLMUnknownException(LLMException):
                 component="LLM",
             )
         )
+
+
+class ToolNotFoundException(LLMException):
+    def __init__(self, tool_name: str):
+        super().__init__(
+            logging_utils.format_log_msg(
+                msg=f"Tool '{tool_name}' not found",
+                component="LLM",
+            )
+        )

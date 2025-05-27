@@ -1,5 +1,20 @@
 import inspect
-from typing import Callable, Union, get_args, get_origin, get_type_hints
+from dataclasses import dataclass
+from typing import Any, Callable, Union, get_args, get_origin, get_type_hints
+
+
+@dataclass
+class ToolCall:
+    name: str
+    arguments: dict
+    call_id: str
+
+
+@dataclass
+class ToolResult:
+    call_id: str
+    result: Any
+    error: str | None = None
 
 
 def parse_docstring(docstring: str | None) -> tuple[str, dict[str, str]]:
