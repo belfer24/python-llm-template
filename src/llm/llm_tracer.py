@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import json
 import os
-import time
 import uuid
 from dataclasses import asdict
 from datetime import datetime
@@ -56,7 +55,7 @@ class LLMTracer:
 
     def init_llm_call(self, llm_input: list[Message], model: str) -> None:
         self.llm_generation = self.span.generation(
-            name=f"{self.run_name}_generation", model=model, input=llm_input, start_time=datetime.now()
+            name="llm generation", model=model, input=llm_input, start_time=datetime.now()
         )
 
     def end_llm_call(self, output: str, llm_usage_information: LiteLLmUsage) -> None:

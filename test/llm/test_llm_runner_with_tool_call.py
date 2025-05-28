@@ -15,7 +15,7 @@ def get_weather(city: str) -> str:
     city: The city to get the weather for
     """
     time.sleep(
-        0.01
+        0.001
     )  # langfuse orders nodes by time created, but truncates at milliseconds. Sleep is necessary for nodes to appear in order.
     return f"The weather in {city} is sunny."
 
@@ -37,5 +37,5 @@ def test_llm_runner():
 
     prompt_input = dict(city="Montreal")
 
-    response = llm_runner.query_llm(prompt_input=prompt_input, query_source="test", censor_func=do_not_censor_prompt)
+    response = llm_runner.run(prompt_input=prompt_input, query_source="test", censor_func=do_not_censor_prompt)
     assert "sunny" in response

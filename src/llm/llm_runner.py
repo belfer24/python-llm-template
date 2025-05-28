@@ -49,7 +49,7 @@ class LLMRunner[T]:
             concrete_prompt.append(concrete_message)
         return concrete_prompt
 
-    def _call_llm(
+    def _make_llm_request(
         self,
         concrete_prompt: list[Message],
         censored_concrete_prompt: list[Message],
@@ -122,7 +122,9 @@ class LLMRunner[T]:
         conversation_messages = messages.copy()
 
         for _ in range(self.max_tool_iterations):
-            response_message = self._call_llm(conversation_messages, censored_messages, tracer, use_prompt_caching)
+            response_message = self._make_llm_request(
+                conversation_messages, censored_messages, tracer, use_prompt_caching
+            )
             tool_calls = self._extract_tool_calls(response_message)
 
             if not tool_calls:
@@ -155,12 +157,26 @@ class LLMRunner[T]:
                 }
                 conversation_messages.append(tool_message)
 
-        final_response_message = self._call_llm(conversation_messages, censored_messages, tracer, use_prompt_caching)
+        final_response_message = self._make_llm_request(
+            conversation_messages, censored_messages, tracer, use_prompt_caching
+        )
         final_content = str(final_response_message.content)
 
         return final_content
 
-    def query_llm(
+    def _handle_llm_interaction(
+        self,
+        concrete_prompt: list[Message],
+        censored_concrete_prompt: list[Message],
+        tracer: LLMTracer,
+        use_prompt_caching: bool,
+    ) -> str:
+        if self.tools:
+            return self._handle_tool_execution(concrete_prompt, censored_concrete_prompt, tracer, use_prompt_caching)
+        response_message = self._make_llm_request(concrete_prompt, censored_concrete_prompt, tracer, use_prompt_caching)
+        return str(response_message.content)
+
+    def run(
         self,
         prompt_input: dict[str, str],
         query_source: str,
@@ -168,25 +184,20 @@ class LLMRunner[T]:
         parent_tracer: LLMTracer | None = None,
         use_prompt_caching: bool = False,
     ) -> T:
+        censored_input = censor_func(prompt_input, self.prompt_private_input_variables)
+        censored_concrete_prompt = self.get_concrete_prompt(censored_input)
+        tracer = LLMTracer(
+            run_name=self.__class__.__name__,
+            tracer_input=censored_input,
+            metadata={"query_source": query_source},
+            parent=parent_tracer,
+        )
+        concrete_prompt = self.get_concrete_prompt(prompt_input)
+        raw_llm_output = ""
         try:
-            censored_input = censor_func(prompt_input, self.prompt_private_input_variables)
-            censored_concrete_prompt = self.get_concrete_prompt(censored_input)
-            tracer = LLMTracer(
-                run_name=self.__class__.__name__,
-                tracer_input=censored_input,
-                metadata={"query_source": query_source},
-                parent=parent_tracer,
+            raw_llm_output = self._handle_llm_interaction(
+                concrete_prompt, censored_concrete_prompt, tracer, use_prompt_caching
             )
-            concrete_prompt = self.get_concrete_prompt(prompt_input)
-
-            if self.tools:
-                raw_llm_output = self._handle_tool_execution(
-                    concrete_prompt, censored_concrete_prompt, tracer, use_prompt_caching
-                )
-            else:
-                response_message = self._call_llm(concrete_prompt, censored_concrete_prompt, tracer, use_prompt_caching)
-                raw_llm_output = str(response_message.content)
-
             parsed_output = self.parse_output(raw_llm_output, query_source, self.model)
             tracer.end_run(raw_llm_output, error=None)
             return parsed_output

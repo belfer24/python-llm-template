@@ -9,7 +9,7 @@ class MessageTemplate(TypedDict):
     cache_control: NotRequired[dict[str, str]]
 
 
-class Message(MessageTemplate):
+class Message(TypedDict):
     role: Literal["system", "user", "assistant", "tool"]
     content: str
     cache_control: NotRequired[dict[str, str]]

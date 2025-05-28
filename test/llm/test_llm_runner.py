@@ -23,5 +23,5 @@ def test_llm_runner():
 
     prompt_input = dict(input="Hello!")
 
-    response = llm_runner.query_llm(prompt_input=prompt_input, query_source="test", censor_func=do_not_censor_prompt)
+    response = llm_runner.run(prompt_input=prompt_input, query_source="test", censor_func=do_not_censor_prompt)
     assert response
